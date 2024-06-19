@@ -16,15 +16,27 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="resultado"
+        android:text="A G R E G A D O"
+        android:visibility="gone"
+        android:background="@color/green"
         android:textAlignment="center"
-        android:textSize="22sp"
+        android:textSize="32sp"
+        android:layout_centerInParent="true"
         android:id="@+id/txtResult"/>
-
 
     <ImageView
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:layout_alignParentEnd="true"
-        android:id="@+id/imgPreview"/>
+        android:id="@+id/imgPreview"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/camera_continuar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:text="Continuar"
+        android:layout_margin="16dp"/>
 </RelativeLayout>
