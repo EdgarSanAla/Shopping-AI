@@ -1,22 +1,16 @@
 package com.example.prueba
 
 import Producto
+import Variante
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Matrix
 import android.os.Bundle
 import android.os.Handler
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.ImageProxy
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.example.prueba.databinding.ActivityCameraBinding
-import com.example.prueba.databinding.ActivityMainBinding
 import com.example.prueba.helpers.ClassifyTf
 import com.example.prueba.helpers.ReturnInterpreter
 import com.ingenieriiajhr.jhrCameraX.BitmapResponse
@@ -36,11 +30,11 @@ class CameraActivity : AppCompatActivity() {
         const val OUTPUT_SIZE = 8
     }
 
-    val classes = arrayOf(Producto(0,"Agua 500ml Members mark", 0),
-        Producto(1,"Aderezo Cesar Clemente jaques", 50),
-        Producto(2,"Mostaza French", 20),
-        Producto(3,"Catsup del monte", 20),
-        Producto(4,"Normal", 0))
+    val classes = arrayOf(Producto(0,"Agua 500ml Members mark", 0, null),
+        Producto(1,"Aderezo Cesar Clemente jaques", 50, null),
+        Producto(2,"Mostaza French", 20, listOf(Variante("150 gr", 20, false), Variante("250 gr", 30, false), Variante("500 gr", 50, false))),
+        Producto(3,"Catsup del monte", 20, null),
+        Producto(4,"Normal", 0, null))
 
     var productosSeleccionados = mutableListOf<Producto>()
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -101,12 +95,16 @@ class CameraActivity : AppCompatActivity() {
                     val productoSelect = classes.find { it.id == maxConfidence }
                     productoSelect?.let {
                         if (it.id != 4 && it.id != 0) {
-                            binding.txtResult.visibility = View.VISIBLE
-                            binding.txtResult.text = "A G R E G A D O\n${it.nombre}"
-                            productosSeleccionados.add(it)
-                            handler.postDelayed({
-                                binding.txtResult.visibility = View.GONE
-                            }, 2000)
+                            if (it.variantes != null){
+                                mostrarDialogoSeleccion(it)
+                            }else{
+                                binding.txtResult.visibility = View.VISIBLE
+                                binding.txtResult.text = "A G R E G A D O\n${it.nombre}"
+                                productosSeleccionados.add(it)
+                                handler.postDelayed({
+                                    binding.txtResult.visibility = View.GONE
+                                }, 2000)
+                            }
                         }
                     }
                 }
@@ -119,4 +117,52 @@ class CameraActivity : AppCompatActivity() {
             binding.imgPreview.setImageBitmap(bitmapScale)
         }
     }
+
+
+    private fun mostrarDialogoSeleccion(producto: Producto) {
+
+        var selectedOption = -1
+        val variantesArray = producto.variantes?.map { it.nombre }?.toTypedArray() ?: arrayOf()
+
+        AlertDialog.Builder(this)
+            .setTitle("Selecciona una variante para ${producto.nombre}")
+            .setSingleChoiceItems(variantesArray, -1) { dialog, which ->
+                selectedOption = which
+            }
+            .setPositiveButton("OK") { dialog, _ ->
+                if (selectedOption != -1 && selectedOption < variantesArray.size) {
+                    val productoClonado = clonarProductoConVarianteSeleccionada(producto, selectedOption)
+                    productosSeleccionados.add(productoClonado)
+                } else {
+                    Toast.makeText(this, "No se seleccionó ninguna variante", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .create()
+            .show()
+    }
+    fun clonarProductoConVarianteSeleccionada(producto: Producto, selectedOption: Int): Producto {
+        // Clonar variantes
+        val variantesClonadas = producto.variantes?.map {
+            Variante(it.nombre, it.precio, it.seleccionada)
+        }?.toMutableList()
+
+        // Marcar la variante seleccionada
+        variantesClonadas?.forEachIndexed { index, variante ->
+            variante.seleccionada = (index == selectedOption)
+        }
+
+        // Clonar el producto con las variantes clonadas
+        return Producto(
+            id = producto.id,
+            nombre = producto.nombre,
+            precio = producto.precio,
+            variantes = variantesClonadas
+        )
+    }
+
+
 }
